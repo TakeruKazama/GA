@@ -87,7 +87,7 @@ if __name__ == '__main__':
 
     print("vec done", x_train.shape)
 
-    model.fit(x_train, y_train, batch_size=32, epochs=10)  # , callbacks=[early_stopping])
+    model.fit([x_train[0], x_train[1], x_train[2], x_train[3], x_train[4]], y_train, batch_size=32, epochs=10)  # , callbacks=[early_stopping])
     with open('data/model.keras', mode='wb') as f:
         model.save(f)
 
