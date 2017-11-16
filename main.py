@@ -58,7 +58,7 @@ def load_data(dir):
                 qv = get_w2v(que)
                 # print(av.shape, qv.shape)
                 try:
-                    a_q = [list(av) + list(qv)]
+                    a_q = np.array([list(av) + list(qv)])
                 except:
                     print(q, qv)
                     continue
@@ -67,7 +67,7 @@ def load_data(dir):
                 x.append(np.array(a_q))
                 y.append(A2onehot(ans))
     #nx = [np.array(ob) for ob in x]
-    return np.array(x), y
+    return np.array(x), np.array(y)
 
 if __name__ == '__main__':
     args = get_args()
@@ -87,7 +87,9 @@ if __name__ == '__main__':
 
     print("vec done", x_train.shape)
     x_dic = {"argm": x_train[0], "o1": x_train[1], "o2": x_train[2], "o3": x_train[3], "o4": x_train[4]}
-    model.fit(x_dic, y_train, batch_size=32, epochs=10)  # , callbacks=[early_stopping])
+    model.fit(x_dic,
+              y_train,
+              batch_size=32, epochs=10)  # , callbacks=[early_stopping])
     with open('data/model.keras', mode='wb') as f:
         model.save(f)
 
