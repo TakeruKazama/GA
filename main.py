@@ -86,8 +86,8 @@ if __name__ == '__main__':
             pickle.dump(y_train, f)
 
     print("vec done", x_train.shape)
-
-    model.fit([x_train[0], x_train[1], x_train[2], x_train[3], x_train[4]], y_train, batch_size=32, epochs=10)  # , callbacks=[early_stopping])
+    x_dic = {"argm": x_train[0], "o1": x_train[1], "o2": x_train[2], "o3": x_train[3], "o4": x_train[4]}
+    model.fit(x_dic, y_train, batch_size=32, epochs=10)  # , callbacks=[early_stopping])
     with open('data/model.keras', mode='wb') as f:
         model.save(f)
 
