@@ -4,32 +4,33 @@ import numpy as np
 import glob
 import argparse
 import json
+from tqdm import tqdm
+import pickle
 
-import model
-
-w2v = gensim.models.KeyedVectors.load_word2vec_format(
-    'data/GoogleNews-vectors-negative300.bin', binary=True)
+from model import model
 
 
 def A2onehot(c):
+
     if c == 'A':
-        return [1, 0, 0, 0]
+        r = [1, 0, 0, 0]
     elif c == 'B':
-        return [0, 1, 0, 0]
+        r = [0, 1, 0, 0]
     elif c == 'C':
-        return [0, 0, 1, 0]
+        r = [0, 0, 1, 0]
     elif c == 'D':
-        return [0, 0, 0, 1]
+        r = [0, 0, 0, 1]
     else:
         raise KeyError("not expected key!")
+    return np.array(r)
 
 
 def get_args():
     parser = argparse.ArgumentParser()
     # parser.register('type', 'bool', str2bool)
-    parser.add_argument('-train_file',
+    parser.add_argument('--train_file',
                         type=str,
-                        default="data/data/train",
+                        default="data/data/train/",
                         help='Training file')
     return parser.parse_args()
 
@@ -46,26 +47,48 @@ def get_w2v(text):
 
 
 def load_data(dir):
-    x = []
+    x = [[],[],[],[],[]]
     y = []
-    question_list = glob.glob(dir+'/*/*.txt', recursive=True)
-    for i, q in enumerate(question_list):
+    question_list = glob.glob(dir+'*/*.txt', recursive=True)
+    for q in tqdm(question_list):
         with open(q, 'r')as f:
             dic = json.load(f)
             av = get_w2v(dic["article"])
-            for q, os, ans in zip(dic["questions"], dic["options"], dic["answers"]):
-                qv = get_w2v(dic[q])
-                t_list = [[av, qv]]
-                for o in os:
-                    t_list.append(get_w2v(o))
-                x.append(t_list)
+            for que, os, ans in zip(dic["questions"], dic["options"], dic["answers"]):
+                qv = get_w2v(que)
+                # print(av.shape, qv.shape)
+                try:
+                    a_q = [list(av) + list(qv)]
+                except:
+                    print(q, qv)
+                    continue
+                for i, o in enumerate(os):
+                    a_q.append(np.array(get_w2v(o)))
+                x.append(np.array(a_q))
                 y.append(A2onehot(ans))
-    return x, y
-
+    #nx = [np.array(ob) for ob in x]
+    return np.array(x), y
 
 if __name__ == '__main__':
     args = get_args()
-    x_train, y_train = load_data(args.train_file)
+    try:
+        with open('xtra.pickle', 'rb') as f:
+            x_train = pickle.load(f)
+        with open('ytra.pickle', 'rb') as f:
+            y_train = pickle.load(f)
+    except:
+        w2v = gensim.models.KeyedVectors.load_word2vec_format(
+            'data/GoogleNews-vectors-negative300.bin', binary=True)
+        x_train, y_train = load_data(args.train_file)
+        with open('xtra.pickle', 'wb') as f:
+            pickle.dump(x_train, f)
+        with open('ytra.pickle', 'wb') as f:
+            pickle.dump(y_train, f)
 
-    model.model2.fit(x_train, y_train, batch_size=32, epochs=10)  # , callbacks=[early_stopping])
+    print("vec done", x_train.shape)
+
+    model.fit(x_train, y_train, batch_size=32, epochs=10)  # , callbacks=[early_stopping])
+    with open('data/model.keras', mode='wb') as f:
+        model.save(f)
+
     #score = model2.evaluate(x_test, y_test, batch_size=16)
