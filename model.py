@@ -9,8 +9,8 @@ max_len = 2048
 dim = 300
 option_num = 4
 
-argmi = Input(shape=(max_len, dim), name='argm')
-argm = GRU(256, return_sequences=True)(argmi)
+# argmi = Input()
+argm = GRU(256, return_sequences=True, input_shape=(max_len, dim), name='argm')
 argm = Dropout(0.1)(argm)
 argm = TimeDistributed(Dense(256))(argm)
 argm = GRU(256)(argm)
@@ -18,7 +18,7 @@ argm = Dense(128)(argm)
 options = []
 
 op1 = Input(shape=(max_len, dim), name='o1')
-shared_lstm = LSTM(256)(op1)
+shared_lstm =LSTM(256)(op1)
 op = Dense(128)(shared_lstm)
 op = concatenate([argm, op])
 op_out = Dense(64)(op)

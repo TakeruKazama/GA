@@ -58,16 +58,16 @@ def load_data(dir):
                 qv = get_w2v(que)
                 # print(av.shape, qv.shape)
                 try:
-                    a_q = np.array([list(av) + list(qv)])
+                    a_q = np.concatenate((av, qv), axis=0)
                 except:
                     print(q, qv)
                     continue
                 for i, o in enumerate(os):
-                    a_q.append(np.array(get_w2v(o)))
-                x.append(np.array(a_q))
+                    x[i+1].append(get_w2v(o))
+                x[0].append(a_q)
                 y.append(A2onehot(ans))
-    #nx = [np.array(ob) for ob in x]
-    return np.array(x), np.array(y)
+    nx = [np.array(ob) for ob in x]
+    return nx, np.array(y)
 
 if __name__ == '__main__':
     args = get_args()
@@ -85,7 +85,7 @@ if __name__ == '__main__':
         with open('ytra.pickle', 'wb') as f:
             pickle.dump(y_train, f)
 
-    print("vec done", x_train.shape)
+    # print("vec done", x_train.shape)
     x_dic = {"argm": x_train[0], "o1": x_train[1], "o2": x_train[2], "o3": x_train[3], "o4": x_train[4]}
     model.fit(x_dic,
               y_train,
