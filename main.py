@@ -5,7 +5,6 @@ import glob
 import argparse
 import json
 from tqdm import tqdm
-import pickle
 
 from model import model
 
@@ -59,33 +58,33 @@ def load_data(dir):
                 # print(av.shape, qv.shape)
                 try:
                     a_q = np.concatenate((av, qv), axis=0)
+                    a_q.resize((1024, 300), refcheck=False)
                 except:
                     print(q, qv)
                     continue
                 for i, o in enumerate(os):
-                    x[i+1].append(get_w2v(o))
+                    ops = get_w2v(o)
+                    ops.resize((256, 300), refcheck=False)
+                    x[i+1].append(ops)
                 x[0].append(a_q)
                 y.append(A2onehot(ans))
     nx = [np.array(ob) for ob in x]
     return nx, np.array(y)
 
+
 if __name__ == '__main__':
     args = get_args()
     try:
-        with open('xtra.pickle', 'rb') as f:
-            x_train = pickle.load(f)
-        with open('ytra.pickle', 'rb') as f:
-            y_train = pickle.load(f)
+        npl = np.load("train.npz")
+
+        x_train = npl['x']
+        y_train = npl['y']
     except:
         w2v = gensim.models.KeyedVectors.load_word2vec_format(
             'data/GoogleNews-vectors-negative300.bin', binary=True)
         x_train, y_train = load_data(args.train_file)
-        with open('xtra.pickle', 'wb') as f:
-            pickle.dump(x_train, f)
-        with open('ytra.pickle', 'wb') as f:
-            pickle.dump(y_train, f)
-
-    # print("vec done", x_train.shape)
+        # np.savez('train',x=x_train,y=y_train)
+    print(type(x_train))
     x_dic = {"argm": x_train[0], "o1": x_train[1], "o2": x_train[2], "o3": x_train[3], "o4": x_train[4]}
     model.fit(x_dic,
               y_train,
