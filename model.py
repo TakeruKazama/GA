@@ -52,7 +52,7 @@ options.append(op_out)
 
 
 output = concatenate(options)
-predictions = Dense(4, activation='sigmoid')(output)
+predictions = Dense(4, activation='softmax')(output)
 
 model = Model(inputs=[argmi, op1, op2, op3, op4], outputs=predictions)
 model.compile(loss='binary_crossentropy',
