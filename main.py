@@ -50,7 +50,7 @@ def get_w2v(text):
 
 
 def load_data(dir):
-    x = [[],[],[],[],[]]
+    x = [[], [], [], [], []]
     y = []
     question_list = glob.glob(dir+'*/*.txt', recursive=True)
     for q in tqdm(question_list):
@@ -76,19 +76,24 @@ def load_data(dir):
     return nx, np.array(y)
 
 
-def load_bach(dir):
+def load_bach(dir, batch_size=32):
     def reset():
         x = {"argm": [], "o1": [], "o2": [], "o3": [], "o4": []}
         y = []
-        return x, y
+        return x, y, 0
     question_list = glob.glob(dir+'*/*.txt', recursive=True)
+    x, y, count = reset()
     for q in question_list:
         with open(q, 'r')as f:
             dic = json.load(f)
             av = get_w2v(dic["article"])
             av.resize((768, 300), refcheck=False)
             for que, os, ans in zip(dic["questions"], dic["options"], dic["answers"]):
-                x, y = reset()
+                count += 1
+                if count > batch_size:
+                    nx = {k: np.array(x[k]) for k in x.keys()}
+                    yield (nx, np.array(y))
+                    x, y, count = reset()
                 qv = get_w2v(que)
                 qv.resize((256, 300), refcheck=False)
                 try:
@@ -100,9 +105,8 @@ def load_bach(dir):
                     ops = get_w2v(o)
                     ops.resize((256, 300), refcheck=False)
                     x['o'+str(i+1)].append(ops)
-                nx = {k: np.array(x[k]) for k in x.keys()}
                 y.append(A2onehot(ans))
-                yield (nx, np.array(y))
+
 
 
 if __name__ == '__main__':
@@ -113,12 +117,11 @@ if __name__ == '__main__':
     # model.fit(x_dic, y_train, batch_size=32, epochs=10)  # , callbacks=[early_stopping])
     early_stopping = EarlyStopping(monitor='val_loss', patience=5)
     model.fit_generator(load_bach(args.train_dir),
-                        steps_per_epoch=1000, epochs=100,
-                        validation_data=load_bach(args.dev_dir),
+                        steps_per_epoch=3000, epochs=100,
+                        validation_data=load_bach(args.dev_dir, 1),
                         validation_steps=120,
                         use_multiprocessing=True,
                         callbacks=[early_stopping])
-    with open('data/model.keras', mode='wb') as f:
-        model.save(f)
+    model.save('data/model.keras')
 
     #score = model2.evaluate(x_test, y_test, batch_size=16)
