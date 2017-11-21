@@ -78,7 +78,7 @@ def load_data(dir):
 
 def load_bach(dir, batch_size=32):
     def reset():
-        x = {"argm": [], "o1": [], "o2": [], "o3": [], "o4": []}
+        x = []
         y = []
         return x, y, 0
     question_list = glob.glob(dir+'*/*.txt', recursive=True)
@@ -91,22 +91,17 @@ def load_bach(dir, batch_size=32):
             for que, os, ans in zip(dic["questions"], dic["options"], dic["answers"]):
                 count += 1
                 if count > batch_size:
-                    nx = {k: np.array(x[k]) for k in x.keys()}
-                    yield (nx, np.array(y))
+                    yield (np.array(x), np.array(y))
                     x, y, count = reset()
                 qv = get_w2v(que)
                 qv.resize((256, 300), refcheck=False)
-                try:
-                    x['argm'].append(np.concatenate((av, qv), axis=0))
-                except:
-                    print(q, qv)
-                    continue
+                qtext = np.concatenate((av, qv), axis=0)
                 for i, o in enumerate(os):
                     ops = get_w2v(o)
                     ops.resize((256, 300), refcheck=False)
-                    x['o'+str(i+1)].append(ops)
+                    qtext = np.concatenate((qtext, ops), axis=0)
+                x.append(qtext)
                 y.append(A2onehot(ans))
-
 
 
 if __name__ == '__main__':
